@@ -1,0 +1,13 @@
+{
+  "general": {
+    "pageDescription": "Your webcam feed as a mosaic painting",
+    "imagesFolder": "images",
+    "jsVendorUrl": "js/vendor.js",
+    "jsBundleUrl": "js/bundle.js",
+    "siteUrl": "https://tuqire.github.io/webcam-mosaic",
+    "version": "1.0.0"
+  },
+  "home": {
+    "pageTitle": "Webcam Mosaic: By Tuqire Hussain"
+  }
+}
