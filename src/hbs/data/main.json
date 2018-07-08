@@ -1,13 +1,13 @@
 {
   "general": {
-    "pageDescription": "Your webcam feed as a mosaic painting",
+    "pageDescription": "Your webcam feed as a comic book",
     "imagesFolder": "images",
     "jsVendorUrl": "js/vendor.js",
     "jsBundleUrl": "js/bundle.js",
-    "siteUrl": "https://tuqire.github.io/webcam-mosaic",
+    "siteUrl": "https://tuqire.github.io/webcam-outline",
     "version": "1.0.0"
   },
   "home": {
-    "pageTitle": "Webcam Mosaic: By Tuqire Hussain"
+    "pageTitle": "Webcam Outline: By Tuqire Hussain"
   }
 }

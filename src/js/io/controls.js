@@ -1,6 +1,6 @@
 import DatGUI from 'dat-gui'
 
-export default class GUI {
+export default class Controls {
   constructor ({
     particles,
     scene

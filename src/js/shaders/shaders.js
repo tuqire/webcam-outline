@@ -10,7 +10,6 @@ const fragmentShader = `
 		vec4 colour = texture2D(tColour, vUv).rgba;
 
 		gl_FragColor = colour;
-		// gl_FragColor = gl_FragColor * texture2D(starImg, gl_PointCoord);
 	}
 `
 

@@ -1,6 +1,6 @@
-# WEBGL Webcam Mosaic
+# WEBGL Webcam Outline
 
-This project converts your webcam fed into a mosaic like visual. Built using `THREE.js`, and `GPGPU`.
+This project converts your webcam fed into a comic like visual. Built using `THREE.js`, and `GPGPU`.
 
 ## Run locally
 
@@ -12,7 +12,7 @@ Then visit [http://localhost:8091](http://localhost:8091)
 
 ## Working Demo
 
-[https://tuqire.github.io/webcam-mosaic/](https://tuqire.github.io/webcam-mosaic/)
+[https://tuqire.github.io/webcam-outline/](https://tuqire.github.io/webcam-outline/)
 
 ## Contributers
 

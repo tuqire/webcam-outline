@@ -1,7 +1,7 @@
 const src = 'src'
 const dest = 'dest/assets'
 const publicPath = 'assets'
-const gitPortfolioOutput = 'tuqire.github/webcam-mosaic'
+const gitPortfolioOutput = 'tuqire.github/webcam-outline'
 
 module.exports = {
   src,

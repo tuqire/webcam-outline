@@ -26,7 +26,7 @@ const sizeSimulationFragmentShader = `
 	float getSize() {
 		vec4 currPosition = vec4((vUv.x * 1.0), (vUv.y * 1.0), 0.0, 1.0);
 		float webcamParticleVal = texture2D(tWebcam, vec2(currPosition.x, currPosition.y)).r;
-		float size = 0.025 * webcamParticleVal;
+		float size = 0.0003 * webcamParticleVal;
 
 		return size;
 	}

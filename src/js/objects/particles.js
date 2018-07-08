@@ -1,6 +1,8 @@
 import FBO from 'three.js-fbo'
 import { createDataTexture } from '../utils'
 import { sizeSimulationVertexShader, sizeSimulationFragmentShader } from '../shaders/size-simulation-shaders'
+import { blackAndWhiteSimulationVertexShader, blackAndWhiteSimulationFragmentShader } from '../shaders/black-and-white-webcam'
+import { differenceSimulationVertexShader, differenceSimulationFragmentShader } from '../shaders/difference-webcam'
 import { vertexShader, fragmentShader } from '../shaders/shaders'
 
 export default class Particles {
@@ -8,8 +10,7 @@ export default class Particles {
     scene,
     configUniforms = {
       color: { value: new THREE.Color(0xffffff) },
-      sizeMultiplierForScreen: { value: (window.innerHeight * window.devicePixelRatio) / 2 },
-      starImg: { value: new THREE.TextureLoader().load('images/star.png') }
+      sizeMultiplierForScreen: { value: (window.innerHeight * window.devicePixelRatio) / 2 }
     },
     blending = THREE.AdditiveBlending,
     transparent = true,
@@ -34,7 +35,10 @@ export default class Particles {
 
     // particle colours
     brightness = 1,
-    opacity = 1
+    opacity = 1,
+
+    // webcam particle values
+    webcamOutlineStrength = 50
   }) {
     this.renderer = renderer
 
@@ -51,6 +55,9 @@ export default class Particles {
     this.sizeInc = sizeInc
     this.skew = skew // skews the median size
 
+    // webcm particle controls
+    this.webcamOutlineStrength = webcamOutlineStrength
+
     // use to define particle colours
     this.brightness = brightness
     this.opacity = opacity
@@ -59,18 +66,18 @@ export default class Particles {
     this.windowHalfX = window.innerWidth / 2
     this.windowHalfY = window.innerHeight / 2
 
-    this.video = document.createElement('video')
+    this.videoEl = document.createElement('video')
 
     const noSupport = document.createElement('h1')
     noSupport.innerHTML = 'Your browser is not supported. Please use Google Chrome (v21 or above).'
 
     navigator.getUserMedia
       ? navigator.getUserMedia({ video: { width: 1280, height: 720 } }, stream => {
-        const video = this.video
-        video.src = URL.createObjectURL(stream) // eslint-disable-line
-        video.width = 480
-        video.height = 480
-        video.autoplay = true
+        const videoEl = this.videoEl
+        videoEl.src = URL.createObjectURL(stream) // eslint-disable-line
+        videoEl.width = 480
+        videoEl.height = 480
+        videoEl.autoplay = true
 
         this.addStars({
           scene,
@@ -102,28 +109,46 @@ export default class Particles {
     const tWidth = this.tWidth = tHeight
     this.numParticles = tWidth * tHeight
 
-    const videoImage = this.videoImage = document.createElement('canvas')
-    this.videoImageContext = videoImage.getContext('2d')
+    const webcamEl = this.webcamEl = document.createElement('canvas')
+    this.webcamElContext = webcamEl.getContext('2d')
 
-    // TODO: remove when moved into simulation shaders
-    // videoImage.width = videoImage.width / 2
-    // videoImage.height = videoImage.height / 2
+    const webcamTexture = this.webcamTexture = new THREE.Texture(webcamEl)
+    webcamTexture.minFilter = webcamTexture.magFilter = THREE.NearestFilter
+    webcamTexture.needsUpdate = true
 
-    const videoTexture = this.videoTexture = new THREE.Texture(videoImage)
-    videoTexture.minFilter = videoTexture.magFilter = THREE.NearestFilter
-    videoTexture.needsUpdate = true
+    const webcamDiffEl = this.webcamDiffEl = document.createElement('canvas')
+    this.webcamDiffElContext = webcamDiffEl.getContext('2d')
 
-    const videoDiffImage = this.videoDiffImage = document.createElement('canvas')
-    this.videoDiffImageContext = videoDiffImage.getContext('2d')
-
-    const videoDiffTexture = this.videoDiffTexture = new THREE.Texture(videoDiffImage)
-    videoDiffTexture.minFilter = videoDiffTexture.magFilter = THREE.NearestFilter
-    videoDiffTexture.needsUpdate = true
-
-    document.querySelector('body').appendChild(videoImage)
-    document.querySelector('body').appendChild(videoDiffImage)
+    const webcamDiffTexture = this.webcamDiffTexture = new THREE.Texture(webcamDiffEl)
+    webcamDiffTexture.minFilter = webcamDiffTexture.magFilter = THREE.NearestFilter
+    webcamDiffTexture.needsUpdate = true
 
     this.positions = new Float32Array(this.numParticles * 3)
+
+    this.blackAndWhiteFBO = new FBO({
+      tWidth: this.webcamEl.width,
+      tHeight: this.webcamEl.height,
+      renderer: renderer.get(),
+      uniforms: {
+        tWebcam: { type: 't', value: webcamTexture }
+      },
+      simulationVertexShader: blackAndWhiteSimulationVertexShader,
+      simulationFragmentShader: blackAndWhiteSimulationFragmentShader
+    })
+
+    this.webcamDifferenceFBO = new FBO({
+      tWidth: this.webcamEl.width,
+      tHeight: this.webcamEl.height,
+      renderer: renderer.get(),
+      uniforms: {
+        webcamWidth: { type: 'f', value: this.webcamEl.width },
+        webcamHeight: { type: 'f', value: this.webcamEl.height },
+        tWebcam: { type: 't', value: 0 },
+        webcamOutlineStrength: { type: 'f', value: this.webcamOutlineStrength }
+      },
+      simulationVertexShader: differenceSimulationVertexShader,
+      simulationFragmentShader: differenceSimulationFragmentShader
+    })
 
     this.sizeFBO = new FBO({
       tWidth,
@@ -132,7 +157,7 @@ export default class Particles {
       uniforms: {
         tPosition: { type: 't', value: 0 },
         tDefaultSize: { type: 't', value: 0 },
-        tWebcam: { type: 't', value: videoDiffTexture },
+        tWebcam: { type: 't', value: 0 },
 
         sizeRange: { type: 'f', value: this.sizeRange },
         sizeInc: { type: 'f', value: this.sizeInc },
@@ -151,10 +176,10 @@ export default class Particles {
     const uniforms = Object.assign({}, configUniforms, {
       tPosition: { type: 't', value: this.sizeFBO.simulationShader.uniforms.tPosition.value },
       tSize: { type: 't', value: this.sizeFBO.targets[0] },
-      tWebcam: { type: 't', value: videoDiffTexture },
+      tWebcam: { type: 't', value: webcamDiffTexture },
 
       // tColour: { type: 't', value: this.getColours() }
-      tColour: { type: 't', value: videoTexture }
+      tColour: { type: 't', value: webcamTexture }
     })
 
     this.material = new THREE.ShaderMaterial({
@@ -322,50 +347,16 @@ export default class Particles {
 
   update () {
     if (this.ready) {
-      // update video texture with webcam difference feed
-      const { video, videoImageContext, videoDiffImageContext, videoImage: { width: videoWidth, height: videoHeight }, videoTexture, videoDiffTexture } = this
-      if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        videoImageContext.drawImage(video, 0, 0, videoWidth, videoHeight)
-
-        videoTexture.needsUpdate = true
-
-        const imgPixels = videoImageContext.getImageData(0, 0, videoWidth, videoHeight)
-
-        for (let y = 0; y < imgPixels.height; y++) {
-          for (let x = 0; x < imgPixels.width; x++) {
-            const i = (y * 4) * imgPixels.width + x * 4
-            const avg = (imgPixels.data[i] + imgPixels.data[i + 1] + imgPixels.data[i + 2]) / 3
-
-            imgPixels.data[i] = avg
-            imgPixels.data[i + 1] = avg
-            imgPixels.data[i + 2] = avg
-          }
-        }
-
-        for (let y = 0; y < imgPixels.height; y += 1) {
-          for (let x = 0; x < imgPixels.width; x += 1) {
-            const i = (y * 4) * imgPixels.width + x * 4
-
-            const average = (imgPixels.data[i - 3] + imgPixels.data[i + 5] +
-              imgPixels.data[i - (imgPixels.width * 4) + 1] + imgPixels.data[i + (imgPixels.width * 4) + 1] +
-              imgPixels.data[i - (imgPixels.width * 4) - 3] + imgPixels.data[i + (imgPixels.width * 4) - 3] +
-              imgPixels.data[i - (imgPixels.width * 4) + 5] + imgPixels.data[i + (imgPixels.width * 4) + 5]) / 4
-
-            imgPixels.data[i] -= average
-            imgPixels.data[i + 1] -= average
-            imgPixels.data[i + 2] -= average
-
-            imgPixels.data[i] *= 1000
-            imgPixels.data[i + 1] *= 1000
-            imgPixels.data[i + 2] *= 1000
-          }
-        }
-
-        videoDiffImageContext.putImageData(imgPixels, 0, 0, 0, 0, imgPixels.width, imgPixels.height)
-
-        videoDiffTexture.needsUpdate = true
+      const { videoEl, webcamElContext, webcamEl: { width: videoWidth, height: videoHeight }, webcamTexture } = this
+      if (videoEl.readyState === videoEl.HAVE_ENOUGH_DATA) {
+        webcamElContext.drawImage(videoEl, 0, 0, videoWidth, videoHeight)
+        webcamTexture.needsUpdate = true
       }
 
+      this.blackAndWhiteFBO.simulate()
+      this.webcamDifferenceFBO.simulationShader.uniforms.tWebcam.value = this.blackAndWhiteFBO.getCurrentFrame()
+      this.webcamDifferenceFBO.simulate()
+      this.sizeFBO.simulationShader.uniforms.tWebcam.value = this.webcamDifferenceFBO.getCurrentFrame()
       this.sizeFBO.simulate()
       this.material.uniforms.tSize.value = this.sizeFBO.getCurrentFrame()
     }
