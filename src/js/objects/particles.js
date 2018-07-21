@@ -35,16 +35,13 @@ export default class Particles {
     this.outlineMultiplier = outlineMultiplier
 
     this.videoEl = document.createElement('video')
+    this.videoWidth = 1280
+    this.videoHeight = 720
 
-    const noSupport = document.createElement('h1')
-    noSupport.innerHTML = 'Your browser is not supported. Please use Google Chrome (v21 or above).'
-
-    navigator.getUserMedia
-      ? navigator.getUserMedia({ video: { width: 1280, height: 720 } }, stream => {
+    if (navigator.getUserMedia) {
+      navigator.getUserMedia({ video: { width: this.videoWidth, height: this.videoHeight } }, stream => {
         const videoEl = this.videoEl
-        videoEl.src = URL.createObjectURL(stream) // eslint-disable-line
-        videoEl.width = 480
-        videoEl.height = 480
+        videoEl.srcObject = stream
         videoEl.autoplay = true
 
         this.addParticles({
@@ -57,7 +54,10 @@ export default class Particles {
           depthWrite
         })
       }, () => console.error('video failed to load'))
-      : document.getElementsByTagName('body')[0].append(noSupport)
+    } else {
+      const info = document.getElementById('info')
+      info.innerHTML = 'Requires use of webcam. Please use the latest version of Chrome.'
+    }
   }
 
   addParticles ({
