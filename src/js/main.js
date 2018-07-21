@@ -8,22 +8,16 @@ import Particles from './objects/particles'
 
 document.addEventListener('DOMContentLoaded', () => {
   if (isWebglEnabled) {
-    const container = document.getElementById('stars-simulation-container')
+    const container = document.getElementById('webcam-simulation-container')
     const renderer = new Renderer({ container })
     const scene = new Scene()
     const particles = new Particles({
       scene,
       renderer,
       numParticles: window.matchMedia('(max-width: 480px)').matches ? 4000 : 100000,
-      radius: 3,
-      minSize: 0.015,
-      maxSize: 0.03,
-      sizeRange: 0.003,
-      sizeInc: 0.00005,
-      skew: 35,
-      brightness: 0.9,
-      opacity: 1,
-      webcamOutlineStrength: 1000
+      webcamOutlineStrength: 1000,
+      defaultSize: 0.005,
+      outlineMultiplier: 0.0003
     })
     const camera = new Camera({
       aspectRatio: 1,

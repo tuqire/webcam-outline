@@ -20,10 +20,10 @@ const differenceSimulationFragmentShader = `
 		vec3 webcamParticleRight = texture2D(tWebcam, vec2(vUv.x + (1.0 / webcamHeight), vUv.y)).xyz;
 
     float average = (
-			webcamParticleAbove.x +
-      webcamParticleBelow.x +
-      webcamParticleLeft.x +
-			webcamParticleRight.x
+			webcamParticleAbove.r +
+      webcamParticleBelow.r +
+      webcamParticleLeft.r +
+			webcamParticleRight.r
 		) / 4.0;
 
     webcamParticle.x -= average;
