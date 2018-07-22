@@ -1,6 +1,5 @@
 import FBO from 'three.js-fbo'
 import { sizeSimulationVertexShader, sizeSimulationFragmentShader } from '../shaders/size-simulation-shaders'
-import { blackAndWhiteSimulationVertexShader, blackAndWhiteSimulationFragmentShader } from '../shaders/black-and-white-webcam'
 import { differenceSimulationVertexShader, differenceSimulationFragmentShader } from '../shaders/difference-webcam'
 import { vertexShader, fragmentShader } from '../shaders/shaders'
 
@@ -70,7 +69,7 @@ export default class Particles {
     depthWrite
   }) {
     // height and width that set up a texture in memory
-    // this texture is used to store particle position values
+    // this texture is used to store particle values
     const tHeight = this.tHeight = Math.ceil(Math.sqrt(this.numParticles))
     const tWidth = this.tWidth = tHeight
     this.numParticles = tWidth * tHeight
@@ -82,26 +81,6 @@ export default class Particles {
     webcamTexture.minFilter = webcamTexture.magFilter = THREE.NearestFilter
     webcamTexture.needsUpdate = true
 
-    const webcamDiffEl = this.webcamDiffEl = document.createElement('canvas')
-    this.webcamDiffElContext = webcamDiffEl.getContext('2d')
-
-    const webcamDiffTexture = this.webcamDiffTexture = new THREE.Texture(webcamDiffEl)
-    webcamDiffTexture.minFilter = webcamDiffTexture.magFilter = THREE.NearestFilter
-    webcamDiffTexture.needsUpdate = true
-
-    this.positions = new Float32Array(this.numParticles * 3)
-
-    this.blackAndWhiteFBO = new FBO({
-      tWidth: this.webcamEl.width,
-      tHeight: this.webcamEl.height,
-      renderer: renderer.get(),
-      uniforms: {
-        tWebcam: { type: 't', value: webcamTexture }
-      },
-      simulationVertexShader: blackAndWhiteSimulationVertexShader,
-      simulationFragmentShader: blackAndWhiteSimulationFragmentShader
-    })
-
     this.webcamDifferenceFBO = new FBO({
       tWidth: this.webcamEl.width,
       tHeight: this.webcamEl.height,
@@ -109,7 +88,7 @@ export default class Particles {
       uniforms: {
         webcamWidth: { type: 'f', value: this.webcamEl.width },
         webcamHeight: { type: 'f', value: this.webcamEl.height },
-        tWebcam: { type: 't', value: 0 },
+        tWebcam: { type: 't', value: webcamTexture },
         webcamOutlineStrength: { type: 'f', value: this.webcamOutlineStrength }
       },
       simulationVertexShader: differenceSimulationVertexShader,
@@ -117,8 +96,8 @@ export default class Particles {
     })
 
     this.sizeFBO = new FBO({
-      tWidth,
-      tHeight,
+      tWidth: this.webcamEl.width,
+      tHeight: this.webcamEl.height,
       renderer: renderer.get(),
       uniforms: {
         tWebcam: { type: 't', value: 0 },
@@ -132,7 +111,7 @@ export default class Particles {
 
     const uniforms = Object.assign({}, configUniforms, {
       tSize: { type: 't', value: this.sizeFBO.targets[0] },
-      tWebcam: { type: 't', value: webcamDiffTexture },
+      tWebcam: { type: 't', value: 0 },
 
       tColour: { type: 't', value: webcamTexture }
     })
@@ -173,8 +152,6 @@ export default class Particles {
         webcamTexture.needsUpdate = true
       }
 
-      this.blackAndWhiteFBO.simulate()
-      this.webcamDifferenceFBO.simulationShader.uniforms.tWebcam.value = this.blackAndWhiteFBO.getCurrentFrame()
       this.webcamDifferenceFBO.simulate()
       this.sizeFBO.simulationShader.uniforms.tWebcam.value = this.webcamDifferenceFBO.getCurrentFrame()
       this.sizeFBO.simulate()
