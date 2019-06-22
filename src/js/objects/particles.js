@@ -1,5 +1,5 @@
 import FBO from 'three.js-fbo'
-import { sizeSimulationVertexShader, sizeSimulationFragmentShader } from '../shaders/size-simulation-shaders'
+import { positionSizeSimulationFragmentShader, positionSizeSimulationVertexShader } from '../shaders/position-size-simulation-shaders'
 import { differenceSimulationVertexShader, differenceSimulationFragmentShader } from '../shaders/difference-webcam'
 import { vertexShader, fragmentShader } from '../shaders/shaders'
 
@@ -22,7 +22,9 @@ export default class Particles {
     // webcam particle values
     webcamOutlineStrength = 1000,
     defaultSize = 0.1,
-    outlineMultiplier = 0.04
+    outlineMultiplier = 0.04,
+    xSpeed = 0.00003,
+    ySpeed = 0.00006
   }) {
     this.renderer = renderer
 
@@ -32,6 +34,9 @@ export default class Particles {
     this.webcamOutlineStrength = webcamOutlineStrength
     this.defaultSize = defaultSize
     this.outlineMultiplier = outlineMultiplier
+
+    this.xSpeed = xSpeed
+    this.ySpeed = ySpeed
 
     this.videoEl = document.createElement('video')
     this.videoWidth = 1280
@@ -95,22 +100,30 @@ export default class Particles {
       simulationFragmentShader: differenceSimulationFragmentShader
     })
 
-    this.sizeFBO = new FBO({
+    this.positionSizeFBO = new FBO({
       tWidth: this.webcamEl.width,
       tHeight: this.webcamEl.height,
       renderer: renderer.get(),
       uniforms: {
         tWebcam: { type: 't', value: 0 },
 
+        tParams: { type: 't', value: 0 },
+        mouse: { value: new THREE.Vector3(10000, 10000, 10000) },
+        mouseRadius: { type: 'f', value: 0.05 },
+        mousePush: { type: 'f', value: 0.0001 },
+        yThreshold: { type: 'f', value: 0.01 },
+
         defaultSize: { type: 'f', value: this.defaultSize },
         outlineMultiplier: { type: 'f', value: this.outlineMultiplier }
       },
-      simulationVertexShader: sizeSimulationVertexShader,
-      simulationFragmentShader: sizeSimulationFragmentShader
+      simulationVertexShader: positionSizeSimulationVertexShader,
+      simulationFragmentShader: positionSizeSimulationFragmentShader
     })
 
+    this.updateParticleParams()
+
     const uniforms = Object.assign({}, configUniforms, {
-      tSize: { type: 't', value: this.sizeFBO.targets[0] },
+      tSize: { type: 't', value: this.positionSizeFBO.targets[0] },
       tWebcam: { type: 't', value: 0 },
 
       tColour: { type: 't', value: webcamTexture }
@@ -144,6 +157,36 @@ export default class Particles {
     this.ready = true
   }
 
+  updateParticleParams () {
+    const params = new Float32Array(this.numParticles * 4)
+
+    for (let i = 0, i4 = 0; i < this.numParticles; i++, i4 += 4) {
+      const velocity = this.getVelocity()
+
+      params[i4] = velocity.x
+      params[i4 + 1] = velocity.y
+      // params[i4 + 2] = this.getSize()
+      // params[i4 + 3] = this.getSizeInc()
+    }
+
+    this.positionSizeFBO.setTextureUniform('tParams', params)
+  }
+
+  getVelocity () {
+    return {
+      x: this.xSpeed * Math.random(),
+      y: this.ySpeed * (Math.random() / 2 + 0.5)
+    }
+  }
+
+  getSize () {
+    return this.particleSize * Math.random() / 2
+  }
+
+  getSizeInc () {
+    return this.particleSizeInc * Math.random() * 2
+  }
+
   update () {
     if (this.ready) {
       const { videoEl, webcamElContext, webcamEl: { width: videoWidth, height: videoHeight }, webcamTexture } = this
@@ -153,9 +196,9 @@ export default class Particles {
       }
 
       this.webcamDifferenceFBO.simulate()
-      this.sizeFBO.simulationShader.uniforms.tWebcam.value = this.webcamDifferenceFBO.getCurrentFrame()
-      this.sizeFBO.simulate()
-      this.material.uniforms.tSize.value = this.sizeFBO.getCurrentFrame()
+      this.positionSizeFBO.simulationShader.uniforms.tWebcam.value = this.webcamDifferenceFBO.getCurrentFrame()
+      this.positionSizeFBO.simulate()
+      this.material.uniforms.tSize.value = this.positionSizeFBO.getCurrentFrame()
     }
   }
 
@@ -169,7 +212,7 @@ export default class Particles {
 
   updateSizes () {
     this.webcamDifferenceFBO.simulationShader.uniforms.webcamOutlineStrength.value = this.webcamOutlineStrength
-    this.sizeFBO.simulationShader.uniforms.defaultSize.value = this.defaultSize
-    this.sizeFBO.simulationShader.uniforms.outlineMultiplier.value = this.outlineMultiplier
+    this.positionSizeFBO.simulationShader.uniforms.defaultSize.value = this.defaultSize
+    this.positionSizeFBO.simulationShader.uniforms.outlineMultiplier.value = this.outlineMultiplier
   }
 }
