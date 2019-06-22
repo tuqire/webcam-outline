@@ -20,23 +20,31 @@ export default class Particles {
     numParticles = 10000,
 
     // webcam particle values
+    mouseRadius = 0.05,
+    mousePush = 0.0001,
+
     webcamOutlineStrength = 1000,
     defaultSize = 0.1,
     outlineMultiplier = 0.04,
     xSpeed = 0.00003,
-    ySpeed = 0.00006
+    ySpeed = 0.00006,
+    yThreshold = 0.03,
   }) {
     this.renderer = renderer
 
     this.numParticles = numParticles
 
     // webcm particle controls
+    this.mouseRadius = mouseRadius
+    this.mousePush = mousePush
+
     this.webcamOutlineStrength = webcamOutlineStrength
     this.defaultSize = defaultSize
     this.outlineMultiplier = outlineMultiplier
 
     this.xSpeed = xSpeed
     this.ySpeed = ySpeed
+    this.yThreshold = yThreshold
 
     this.videoEl = document.createElement('video')
     this.videoWidth = 1280
@@ -109,9 +117,9 @@ export default class Particles {
 
         tParams: { type: 't', value: 0 },
         mouse: { value: new THREE.Vector3(10000, 10000, 10000) },
-        mouseRadius: { type: 'f', value: 0.05 },
-        mousePush: { type: 'f', value: 0.0001 },
-        yThreshold: { type: 'f', value: 0.01 },
+        mouseRadius: { type: 'f', value: this.mouseRadius },
+        mousePush: { type: 'f', value: this.mousePush },
+        yThreshold: { type: 'f', value: this.yThreshold },
 
         defaultSize: { type: 'f', value: this.defaultSize },
         outlineMultiplier: { type: 'f', value: this.outlineMultiplier }
