@@ -10,7 +10,6 @@ const differenceSimulationFragmentShader = `
   uniform float sizeRange;
   uniform float webcamWidth;
 	uniform float webcamHeight;
-	uniform float webcamOutlineStrength;
 
 	void main() {
 		vec3 webcamParticle = texture2D(tWebcam, vUv).xyz;
@@ -29,10 +28,6 @@ const differenceSimulationFragmentShader = `
     webcamParticle.x -= average;
     webcamParticle.y -= average;
     webcamParticle.z -= average;
-
-    webcamParticle.x *= webcamOutlineStrength;
-    webcamParticle.y *= webcamOutlineStrength;
-    webcamParticle.z *= webcamOutlineStrength;
 
 		gl_FragColor = vec4(webcamParticle, 1.0);
 	}

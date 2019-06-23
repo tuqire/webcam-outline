@@ -3,6 +3,11 @@ import { positionSizeSimulationFragmentShader, positionSizeSimulationVertexShade
 import { differenceSimulationVertexShader, differenceSimulationFragmentShader } from '../shaders/difference-webcam'
 import { vertexShader, fragmentShader } from '../shaders/shaders'
 
+export const SHAPES = {
+  CIRCLE: 'CIRCLE',
+  SQUARE: 'SQUARE'
+}
+
 export default class Particles {
   constructor ({
     scene,
@@ -21,14 +26,14 @@ export default class Particles {
 
     // webcam particle values
     mouseRadius = 0.05,
-    mousePush = 0.0001,
+    mousePush = 0.0004,
 
-    webcamOutlineStrength = 1000,
+    particleShape = SHAPES.CIRCLE,
     defaultSize = 0.1,
     outlineMultiplier = 0.04,
     xSpeed = 0.00003,
     ySpeed = 0.00006,
-    yThreshold = 0.03,
+    yThreshold = 0.03
   }) {
     this.renderer = renderer
 
@@ -38,13 +43,16 @@ export default class Particles {
     this.mouseRadius = mouseRadius
     this.mousePush = mousePush
 
-    this.webcamOutlineStrength = webcamOutlineStrength
+    this.particleShape = particleShape
     this.defaultSize = defaultSize
     this.outlineMultiplier = outlineMultiplier
 
     this.xSpeed = xSpeed
     this.ySpeed = ySpeed
     this.yThreshold = yThreshold
+
+    this.windowHalfX = window.innerWidth / 2
+    this.windowHalfY = window.innerHeight / 2
 
     this.videoEl = document.createElement('video')
     this.videoWidth = 1280
@@ -101,8 +109,7 @@ export default class Particles {
       uniforms: {
         webcamWidth: { type: 'f', value: this.webcamEl.width },
         webcamHeight: { type: 'f', value: this.webcamEl.height },
-        tWebcam: { type: 't', value: webcamTexture },
-        webcamOutlineStrength: { type: 'f', value: this.webcamOutlineStrength }
+        tWebcam: { type: 't', value: webcamTexture }
       },
       simulationVertexShader: differenceSimulationVertexShader,
       simulationFragmentShader: differenceSimulationFragmentShader
@@ -131,6 +138,7 @@ export default class Particles {
     this.updateParticleParams()
 
     const uniforms = Object.assign({}, configUniforms, {
+      isCircle: { type: 'b', value: this.particleShape === SHAPES.CIRCLE },
       tSize: { type: 't', value: this.positionSizeFBO.targets[0] },
       tWebcam: { type: 't', value: 0 },
 
@@ -163,6 +171,7 @@ export default class Particles {
     scene.add(this.get())
 
     this.ready = true
+    document.addEventListener('mousemove', this.onDocumentMouseMove.bind(this), false)
   }
 
   updateParticleParams () {
@@ -195,6 +204,13 @@ export default class Particles {
     return this.particleSizeInc * Math.random() * 2
   }
 
+  onDocumentMouseMove (event) {
+    this.mouseX = this.windowHalfX - event.clientX
+    this.mouseY = event.clientY - this.windowHalfY
+
+    this.positionSizeFBO.simulationShader.uniforms.mouse.value.set(0.5 * this.mouseX / this.windowHalfX, -0.5 * this.mouseY / this.windowHalfY, 0)
+  }
+
   update () {
     if (this.ready) {
       const { videoEl, webcamElContext, webcamEl: { width: videoWidth, height: videoHeight }, webcamTexture } = this
@@ -218,8 +234,14 @@ export default class Particles {
     this.cameraZ = newCameraZ
   }
 
+  updateParticleVars () {
+    this.positionSizeFBO.simulationShader.uniforms.mouseRadius.value = this.mouseRadius
+    this.positionSizeFBO.simulationShader.uniforms.mousePush.value = this.mousePush
+    this.positionSizeFBO.simulationShader.uniforms.yThreshold.value = this.yThreshold
+    this.material.uniforms.isCircle.value = this.particleShape === SHAPES.CIRCLE
+  }
+
   updateSizes () {
-    this.webcamDifferenceFBO.simulationShader.uniforms.webcamOutlineStrength.value = this.webcamOutlineStrength
     this.positionSizeFBO.simulationShader.uniforms.defaultSize.value = this.defaultSize
     this.positionSizeFBO.simulationShader.uniforms.outlineMultiplier.value = this.outlineMultiplier
   }

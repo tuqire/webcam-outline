@@ -2,7 +2,7 @@
 
 const fragmentShader = `
 	uniform sampler2D tColour;
-	uniform sampler2D starImg;
+	uniform bool isCircle;
 
 	varying vec2 vUv;
 
@@ -11,7 +11,9 @@ const fragmentShader = `
 
 		gl_FragColor = colour;
 
-		if (length(gl_PointCoord - vec2(0.5, 0.5)) > 0.475) discard; // makes particles a circle
+		if (isCircle) {
+			if (length(gl_PointCoord - vec2(0.5, 0.5)) > 0.475) discard; // makes particles a circle
+		}
 	}
 `
 
@@ -26,7 +28,6 @@ const vertexShader = `
 	void main() {
 		vUv = position.xy;
 
-		// vec4 position = vec4((vUv.x * 1.0) - 0.5, (vUv.y * 1.0) - 0.5, 0.0, 1.0);
 		vec3 position = texture2D(tSize, vUv).xyz;
 		float size = texture2D(tSize, vUv).w;
 

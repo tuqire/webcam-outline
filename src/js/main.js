@@ -18,9 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
       scene,
       renderer,
       numParticles: isTabletScreen() ? 50000 : 100000,
-      webcamOutlineStrength: 1000,
       defaultSize: 0.005,
-      outlineMultiplier: 0.0003
+      outlineMultiplier: 0.2,
+      ySpeed: 0.000092,
+      yThreshold: 0.075
     })
     const camera = new Camera({
       aspectRatio: 1,
