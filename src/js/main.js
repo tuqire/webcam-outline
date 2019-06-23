@@ -6,22 +6,28 @@ import Renderer from './io/renderer'
 import Scene from './objects/scene'
 import Particles from './objects/particles'
 
-const isNotMobileScreen = () => window.matchMedia('(min-width: 480px)').matches
-const isTabletScreen = () => window.matchMedia('(max-width: 1000px)').matches
+import getParameterByName from './helpers/getParameterByName'
+import showInfoBox from './helpers/showInfoBox'
+import isNotMobileScreen from './helpers/isNotMobileScreen'
 
 document.addEventListener('DOMContentLoaded', () => {
+  const quality = Number(getParameterByName('quality'))
+
+  if (!quality || isNaN(quality)) {
+    document.getElementById('select-quality').style.display = 'block'
+    return
+  }
+
   if (isWebglEnabled && isNotMobileScreen()) {
-    const container = document.getElementById('webcam-simulation-container')
+    showInfoBox()
+
+    const container = document.getElementById('simulation')
     const renderer = new Renderer({ container })
     const scene = new Scene()
     const particles = new Particles({
       scene,
       renderer,
-      numParticles: isTabletScreen() ? 50000 : 100000,
-      defaultSize: 0.005,
-      outlineMultiplier: 0.2,
-      ySpeed: 0.000092,
-      yThreshold: 0.075
+      numParticles: quality
     })
     const camera = new Camera({
       aspectRatio: 1,
@@ -62,7 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
     init()
     animate()
   } else {
-    const info = document.getElementById('info')
-    info.innerHTML = 'This browser is not supported. Please use the latest version of Chrome on desktop.'
+    document.getElementById('no-support').style.display = 'block'
   }
 })

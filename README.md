@@ -1,26 +1,21 @@
-# WEBGL Webcam Outline
+# Webcam Outline
 
-This project converts your webcam fed into a comic like visual. Built using `THREE.js`, and `GPGPU`.
+This project manipulates a particle system using your webcam. Built using `Javascript`, `THREE.js`, and [`GPGPU`](https://en.wikipedia.org/wiki/General-purpose_computing_on_graphics_processing_units).
 
-## Run locally
+Requires access to your webcam.
+
+## To run locally
 
 ```bash
-yarn start
+yarn && yarn start
 ```
 
-Then visit [http://localhost:8091](http://localhost:8091)
+Then visit http://localhost:8091
 
 ## Working Demo
 
-[https://tuqire.github.io/webcam-outline/](https://tuqire.github.io/webcam-outline/)
+[tuqire.github.io/webcam-outline/](https://tuqire.github.io/webcam-outline/)
 
 ## Contributers
 
 * Tuqire Hussain <me@tuqire.com>
-
-## TODO
-
-1. adjust image diff map
-2. remove excess params in size simulation shader
-3. add low and high val to particles and uniforms
-4. move image map to shader

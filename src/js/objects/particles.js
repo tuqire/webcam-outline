@@ -25,15 +25,15 @@ export default class Particles {
     numParticles = 10000,
 
     // webcam particle values
-    mouseRadius = 0.05,
+    mouseRadius = 0.075,
     mousePush = 0.0004,
 
     particleShape = SHAPES.CIRCLE,
-    defaultSize = 0.1,
-    outlineMultiplier = 0.04,
-    xSpeed = 0.00003,
-    ySpeed = 0.00006,
-    yThreshold = 0.03
+    defaultSize = 0.003,
+    outlineMultiplier = 0.6,
+    xSpeed = 0.000065,
+    ySpeed = 0.0002,
+    yThreshold = 0.05
   }) {
     this.renderer = renderer
 
